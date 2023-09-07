@@ -12,13 +12,10 @@ query_img = read_img('./data1/obj1_t1.JPG')
 # show_img(data_img, 'database')
 # show_img(query_img, 'query')
 
-sift = cv2.xfeatures2d.SIFT_create(edgeThreshold=2.9, contrastThreshold=0.16, nOctaveLayers=5, sigma=1.4)
-kp_sift = sift.detect(data_img, None)
-kp_num = len(kp_sift)
-print('key points number = ', kp_num)
-
-
-draw_kp(kp_sift, data_img)
+def sift_kp_extract(img):
+    sift = cv2.xfeatures2d.SIFT_create(edgeThreshold=2.9, contrastThreshold=0.16, nOctaveLayers=5, sigma=1.4)
+    kp_sift = sift.detect(img, None)
+    return kp_sift
 
 
 def crop_img(img):
@@ -79,20 +76,33 @@ def get_point_location(kp_img):
     return coordinate_list
 
 
+def sift_find_match(source_img, angle):
+    kp_sift = sift_kp_extract(source_img)
+    kp_img = generate_point_image(source_img, kp_sift)
+    image_rotated = rotate_img(data_img, angle)
+    kp_rotated = rotate_img(np.expand_dims(kp_img, 2), angle, gray=True)
+    kp_origin_rotated = get_point_location(kp_rotated)
+    kp_rotated = sift_kp_extract(image_rotated)
+    draw_kp(kp_rotated, image_rotated)
+    draw_kp(kp_origin_rotated, image_rotated, cv_point=False)
+    match_num = 0
+    for i in range(len(kp_origin_rotated)):
+        p = np.array(kp_origin_rotated[i])
+        for j in range(len(kp_rotated)):
+            target = np.floor(np.array(list(kp_rotated[j].pt)))
+            distance = np.sum(np.abs(p-target))
+            match_num += 1 if distance < 2 else 0
+    return match_num, match_num/len(kp_origin_rotated)
 
 
+def test_robustness(img, angle_list):
+    rate_list = []
+    for angle in angle_list:
+        matches, robust_rate = sift_find_match(img, angle)
+        rate_list.append(robust_rate)
+    plt.plot(angle_list, rate_list)
+    plt.show()
 
 
-kp_img = generate_point_image(data_img, kp_sift)
-
-image_rotated = rotate_img(data_img, 30)
-kp_rotated = rotate_img(np.expand_dims(kp_img, 2), 30, gray=True)
-kp_list_rotated = get_point_location(kp_rotated)
-
-plt.imshow(np.stack((image_rotated[:, :, 2], image_rotated[:, :, 1], image_rotated[:, :, 0]), axis=-1))
-for k in range(len(kp_list_rotated)):
-    coordinate = kp_list_rotated[k]
-    plt.scatter(coordinate[0], coordinate[1], c='b', s=5, marker='*')
-plt.show()
-
-
+angles = np.arange(0, 360, 15)
+test_robustness(data_img, angles)
