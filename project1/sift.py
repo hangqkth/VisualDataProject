@@ -12,10 +12,15 @@ query_img = read_img('./data1/obj1_t1.JPG')
 # show_img(data_img, 'database')
 # show_img(query_img, 'query')
 
-def sift_kp_extract(img):
-    sift = cv2.xfeatures2d.SIFT_create(edgeThreshold=2.9, contrastThreshold=0.16, nOctaveLayers=5, sigma=1.4)
+def sift_kp_extract(img,scale=1.4):
+    sift = cv2.xfeatures2d.SIFT_create(edgeThreshold=2.9, contrastThreshold=0.16, nOctaveLayers=5, sigma=scale)
     kp_sift = sift.detect(img, None)
     return kp_sift
+
+def surf_kp_extract(img,scale=1):
+    surf = cv2.xfeatures2d.SURF_create(hessianThreshold=8000*scale)
+    kp_surf, des = surf.detectAndCompute(data_img, None)
+    return kp_surf
 
 
 def crop_img(img):
@@ -79,12 +84,15 @@ def get_point_location(kp_img):
 def sift_find_match(source_img, angle):
     kp_sift = sift_kp_extract(source_img)
     kp_img = generate_point_image(source_img, kp_sift)
+
     image_rotated = rotate_img(data_img, angle)
     kp_rotated = rotate_img(np.expand_dims(kp_img, 2), angle, gray=True)
+
     kp_origin_rotated = get_point_location(kp_rotated)
     kp_rotated = sift_kp_extract(image_rotated)
     draw_kp(kp_rotated, image_rotated)
     draw_kp(kp_origin_rotated, image_rotated, cv_point=False)
+
     match_num = 0
     for i in range(len(kp_origin_rotated)):
         p = np.array(kp_origin_rotated[i])
@@ -104,7 +112,42 @@ def test_robustness(img, angle_list):
     plt.show()
 
 
+def find_match_scale(img, scale, type):
+    if type=="sift":
+        kp_sift = sift_kp_extract(img,1)
+        kp_sift_scaled = sift_kp_extract(img, scale)
+
+    if type=="surf":
+        kp_sift = surf_kp_extract(img, 1)
+        kp_sift_scaled = surf_kp_extract(img, scale)
+
+
+    match_num = 0
+    for i in range(len(kp_sift)):
+        p = np.array([kp_sift[i].pt[0], kp_sift[i].pt[1]])
+        count = 0
+        for j in range(len(kp_sift_scaled)):
+            target = np.floor(np.array(list(kp_sift_scaled[j].pt)))
+            distance = np.sum(np.abs(p - target))
+            count += 1 if distance < 2 else 0
+        match_num += 1 if count >0 else 0
+    return match_num, match_num / len(kp_sift)
+
+
+def test_scaling_factor(img, n, type):
+    rate_list_sift = []
+    for i in range(n):
+        matches_sift, x =find_match_scale(img, 1.2**i,type)
+        rate_list_sift.append(x)
+    scale_list=np.arange(0,n,1)
+    plt.plot(scale_list,rate_list_sift)
+    plt.show()
+
+
 angles = np.arange(0, 360, 15)
 test_robustness(data_img, angles)
 
+test_scaling_factor(data_img, 8, "sift")
+
+test_scaling_factor(data_img, 8, "surf")
 
