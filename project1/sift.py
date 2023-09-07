@@ -1,4 +1,5 @@
 import numpy as np
+import cv2 as cv
 from functionals import read_img, show_img, normalize
 import scipy.signal
 import os
@@ -7,9 +8,16 @@ import os
 data_img = read_img('./data1/obj1_5.JPG')
 query_img = read_img('./data1/obj1_t1.JPG')
 
-show_img(data_img, 'database')
+# show_img(data_img, 'database')
 # show_img(query_img, 'query')
 
+data_img = cv.cvtColor(data_img, cv2.COLOR_BGR2GRAY)
+# sift = cv2.SIFT_create()
+# kp = sift.detect(data_img, None)
+# img = cv2.drawKeypoints(data_img, kp, data_img)
+# print(kp[0])
+surf = cv.xfeatures2d.SURF_create(400)
+kp, des = surf.detectAndCompute(data_img, None)
 
 def sv_gaussian(scale, x, y):
     sigma = scale  # standard deviation
@@ -36,12 +44,8 @@ def load_gaussian_img(obj_img, k):
         kernel = np.load('./data1/'+kernel_name)
     else:
         kernel = get_gaussian_img([obj_img.shape[0], obj_img.shape[1]], k)
-        np.save('./data1/gauss_' + str(k) + '.npy', gauss_img)
+        np.save('./data1/gauss_' + str(k) + '.npy', kernel)
     return kernel
-
-
-scale = 10
-gauss_img = load_gaussian_img(data_img, scale)
 
 
 def conv_for_rgb_img(kernel, img):
@@ -53,6 +57,7 @@ def conv_for_rgb_img(kernel, img):
     return output
 
 
-lp_img = conv_for_rgb_img(gauss_img, data_img)
 
-show_img(lp_img)
+
+
+
