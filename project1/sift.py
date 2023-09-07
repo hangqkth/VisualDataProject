@@ -1,5 +1,5 @@
 import numpy as np
-import cv2 as cv
+import cv2
 from functionals import read_img, show_img, normalize
 import scipy.signal
 import os
@@ -11,13 +11,13 @@ query_img = read_img('./data1/obj1_t1.JPG')
 # show_img(data_img, 'database')
 # show_img(query_img, 'query')
 
-data_img = cv.cvtColor(data_img, cv2.COLOR_BGR2GRAY)
-# sift = cv2.SIFT_create()
-# kp = sift.detect(data_img, None)
-# img = cv2.drawKeypoints(data_img, kp, data_img)
-# print(kp[0])
-surf = cv.xfeatures2d.SURF_create(400)
-kp, des = surf.detectAndCompute(data_img, None)
+data_img = cv2.cvtColor(data_img, cv2.COLOR_BGR2GRAY)
+sift = cv2.xfeatures2d.SIFT_create()
+kp_sift = sift.detect(data_img, None)
+
+surf = cv2.xfeatures2d.SURF_create(400)
+kp_surf, des = surf.detectAndCompute(data_img, None)
+
 
 def sv_gaussian(scale, x, y):
     sigma = scale  # standard deviation
