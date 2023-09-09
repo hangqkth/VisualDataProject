@@ -56,7 +56,21 @@ def nn_ratio_match():
     cv2.imwrite('./matched_img/nn_ratio_match.jpg', output_image)
 
 
-fix_threshold_match()
-nn_match()
-nn_ratio_match()
+def nn_ratio_match_surf():
+    keypoints1, descriptors1 = surf.detectAndCompute(data_img, None)
+    keypoints2, descriptors2 = surf.detectAndCompute(query_img, None)
+    bf = cv2.BFMatcher()
+    matches = bf.knnMatch(descriptors1, descriptors2, k=2)
+    threshold = 0.7
+    good_matches = []
+    for m, n in matches:
+        if m.distance < threshold * n.distance:
+            good_matches.append(m)
+    output_image = cv2.drawMatches(data_img, keypoints1, query_img, keypoints2, good_matches, None)
+    cv2.imwrite('./matched_img/nn_ratio_match_surf.jpg', output_image)
 
+
+# fix_threshold_match()
+# nn_match()
+# nn_ratio_match()
+nn_ratio_match_surf()
