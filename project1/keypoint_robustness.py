@@ -7,13 +7,6 @@ import scipy.signal
 import os
 
 
-data_img = read_img('./data1/obj1_5.JPG')
-query_img = read_img('./data1/obj1_t1.JPG')
-
-# show_img(data_img, 'database')
-# show_img(query_img, 'query')
-
-
 def sift_kp_extract(img):
     sift = cv2.xfeatures2d.SIFT_create(edgeThreshold=2.9, contrastThreshold=0.16, nOctaveLayers=5, nfeatures=400)
     kp_sift = sift.detect(img, None)
@@ -170,17 +163,6 @@ def test_scaling_factor(img, n, type):
     return rate_list_sift
 
 
-angles = np.arange(0, 360, 15)
-#
-method = "surf"
-# rate_list = test_scaling_factor(data_img, 8, method)
-# rate_list = test_scaling_factor(data_img, 8, method)
-# np.save('./data1/scale_rate_'+method+'.npy', np.array(rate_list))
-
-# rate_list = test_robustness(data_img, angles, method)
-# np.save('./data1/rotate_rate_'+method+'.npy', np.array(rate_list))
-
-
 def draw_scale_plot():
     sift_scale_rate = np.load('./data1/scale_rate_sift.npy')
     surf_scale_rate = np.load('./data1/scale_rate_surf.npy')
@@ -203,5 +185,17 @@ def draw_rotate_plot():
     plt.show()
 
 
-draw_scale_plot()
-draw_rotate_plot()
+if __name__ == "__main__":
+    data_img = read_img('./data1/obj1_5.JPG')
+    query_img = read_img('./data1/obj1_t1.JPG')
+    angles = np.arange(0, 360, 15)
+    method = "surf"
+    # rate_list = test_scaling_factor(data_img, 8, method)
+    # rate_list = test_scaling_factor(data_img, 8, method)
+    # np.save('./data1/scale_rate_'+method+'.npy', np.array(rate_list))
+
+    # rate_list = test_robustness(data_img, angles, method)
+    # np.save('./data1/rotate_rate_'+method+'.npy', np.array(rate_list))
+
+    draw_scale_plot()
+    draw_rotate_plot()

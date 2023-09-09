@@ -11,6 +11,7 @@ def read_img(img_path):
 
 
 def show_img(img_array, img_name=None):
+    plt.figure(figsize=(10, 10))
     if len(img_array.shape) == 3:
         plt.imshow(np.stack((img_array[:, :, 2], img_array[:, :, 1], img_array[:, :, 0]), axis=-1))
         plt.title(img_name)
