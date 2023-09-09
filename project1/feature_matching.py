@@ -15,8 +15,8 @@ def compare_keypoint():
     kp_sift_data = sift_kp_extract(data_img)
     kp_sift_query = sift_kp_extract(query_img)
 
-    draw_kp(kp_sift_data, data_img, "obj1_5")
-    draw_kp(kp_sift_query, query_img, "obj1_t5")
+    draw_kp(kp_sift_data, data_img, "obj1_5.jpg; sift")
+    draw_kp(kp_sift_query, query_img, "obj1_t5.jpg; sift")
 
 
 def fix_threshold_match():
@@ -70,7 +70,8 @@ def nn_ratio_match_surf():
     cv2.imwrite('./matched_img/nn_ratio_match_surf.jpg', output_image)
 
 
+compare_keypoint()
 # fix_threshold_match()
 # nn_match()
 # nn_ratio_match()
-nn_ratio_match_surf()
+# nn_ratio_match_surf()
