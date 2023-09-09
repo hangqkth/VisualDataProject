@@ -67,12 +67,13 @@ def conv_for_rgb_img(kernel, img):
     return output
 
 
-def draw_kp(kp_list, img_array, cv_point=True):
+def draw_kp(kp_list, img_array, title, cv_point=True):
     plt.figure(10)
     plt.imshow(np.stack((img_array[:, :, 2], img_array[:, :, 1], img_array[:, :, 0]), axis=-1))
     for k in range(len(kp_list)):
         coordinate = kp_list[k].pt if cv_point else kp_list[k]
         plt.scatter(coordinate[0], coordinate[1], c='b', s=5, marker='*')
+    plt.title(title)
     plt.show()
 
 
