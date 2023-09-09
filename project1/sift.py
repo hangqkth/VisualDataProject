@@ -12,13 +12,13 @@ query_img = read_img('./data1/obj1_t1.JPG')
 # show_img(data_img, 'database')
 # show_img(query_img, 'query')
 
-def sift_kp_extract(img,scale=1.4):
-    sift = cv2.xfeatures2d.SIFT_create(edgeThreshold=2.9, contrastThreshold=0.16, nOctaveLayers=5, sigma=scale)
+def sift_kp_extract(img):
+    sift = cv2.xfeatures2d.SIFT_create(edgeThreshold=2.9, contrastThreshold=0.16, nOctaveLayers=5)
     kp_sift = sift.detect(img, None)
     return kp_sift
 
-def surf_kp_extract(img,scale=1):
-    surf = cv2.xfeatures2d.SURF_create(hessianThreshold=8000*scale)
+def surf_kp_extract(img):
+    surf = cv2.xfeatures2d.SURF_create(hessianThreshold=8000)
     kp_surf, des = surf.detectAndCompute(data_img, None)
     return kp_surf
 
@@ -112,14 +112,31 @@ def test_robustness(img, angle_list):
     plt.show()
 
 
+def imresize(image, target_size):
+    resized_image = cv2.resize(image, target_size, interpolation=cv2.INTER_LINEAR)
+
+    return resized_image
+
 def find_match_scale(img, scale, type):
+    weight =np.floor(img.shape[0]*scale)
+    height =np.floor(img.shape[1]*scale)
+    print(weight, height)
+
+
+    scaled_img=imresize(img, (int(height), int(weight)))
+
+    #cv2.imwrite('output.jpg', img)
+    #cv2.imwrite('output_scaled.jpg', scaled_img)
+    #exit(2)
+
+
     if type=="sift":
-        kp_sift = sift_kp_extract(img,1)
-        kp_sift_scaled = sift_kp_extract(img, scale)
+        kp_sift = sift_kp_extract(img)
+        kp_sift_scaled = sift_kp_extract(scaled_img)
 
     if type=="surf":
-        kp_sift = surf_kp_extract(img, 1)
-        kp_sift_scaled = surf_kp_extract(img, scale)
+        kp_sift = surf_kp_extract(img)
+        kp_sift_scaled = surf_kp_extract(scaled_img)
 
 
     match_num = 0
@@ -145,9 +162,11 @@ def test_scaling_factor(img, n, type):
 
 
 angles = np.arange(0, 360, 15)
-test_robustness(data_img, angles)
 
-test_scaling_factor(data_img, 8, "sift")
+#test_robustness(data_img, angles)
 
-test_scaling_factor(data_img, 8, "surf")
+test_scaling_factor(data_img, 3, "sift")
 
+#test_scaling_factor(data_img, 8, "surf")
+
+print(data_img.size)
