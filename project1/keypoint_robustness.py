@@ -15,7 +15,7 @@ def sift_kp_extract(img):
 
 def surf_kp_extract(img):
     surf = cv2.xfeatures2d.SURF_create(hessianThreshold=8000)
-    kp_surf, des = surf.detectAndCompute(img, None)
+    kp_surf = surf.detect(img, None)
     return kp_surf
 
 
@@ -94,7 +94,7 @@ def find_match_rotate(source_img, angle, method):
         distances = []
         for j in range(len(kp_rotated)):
             target = np.floor(np.array(list(kp_rotated[j].pt)))
-            distances.append(np.average(np.abs(p - target)))
+            distances.append(np.max(np.abs(p - target)))
         match_num += 1 if min(distances) < 2 else 0
     return match_num, match_num/len(kp_origin_rotated)
 
@@ -134,8 +134,8 @@ def find_match_scale(img, scale, type):
     print("key points extract finished")
 
     kp_origin_scaled = [np.array(list(kp[i].pt)) * scale for i in range(len(kp))]
-    draw_kp(kp_origin_scaled, scaled_img, cv_point=False, title='origin scaled, ' + str(scale))
-    draw_kp(kp_scaled, scaled_img, title='scaled, '+str(scale))
+    # draw_kp(kp_origin_scaled, scaled_img, cv_point=False, title='origin scaled, ' + str(scale))
+    # draw_kp(kp_scaled, scaled_img, title='scaled, '+str(scale))
 
     match_num = 0
 
@@ -145,7 +145,7 @@ def find_match_scale(img, scale, type):
         for j in range(len(kp_scaled)):
             target = np.floor(np.array(list(kp_scaled[j].pt)))
             # print(p.shape, target.shape)
-            distances.append(np.average(np.abs(p - target)))
+            distances.append(np.max(np.abs(p - target)))
         match_num += 1 if min(distances) < 2 else 0
     print("match finished")
     return match_num, match_num / len(kp_origin_scaled)
@@ -190,10 +190,12 @@ if __name__ == "__main__":
     query_img = read_img('./data1/obj1_t1.JPG')
     angles = np.arange(0, 360, 15)
     method = "surf"
-    # rate_list = test_scaling_factor(data_img, 8, method)
+
+    # repeatability versus scaling factor
     # rate_list = test_scaling_factor(data_img, 8, method)
     # np.save('./data1/scale_rate_'+method+'.npy', np.array(rate_list))
 
+    # repeatability versus rotation angle
     # rate_list = test_robustness(data_img, angles, method)
     # np.save('./data1/rotate_rate_'+method+'.npy', np.array(rate_list))
 

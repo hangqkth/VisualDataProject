@@ -29,7 +29,6 @@ def normalize(matrix):
     return (matrix-np.min(matrix))/(np.max(matrix) - np.min(matrix))
 
 
-
 def sv_gaussian(scale, x, y):
     sigma = scale  # standard deviation
     g = (1/(2*np.pi*sigma**2))*np.exp(-(x**2+y**2)/(2*sigma**2))  # Gaussian pdf
