@@ -171,7 +171,7 @@ def draw_scale_plot():
     plt.plot(scale_list, surf_scale_rate)
     plt.legend(["sift", "surf"])
     plt.title("Repeatability versus scaling factor")
-    plt.show()
+    # plt.show()
 
 
 def draw_rotate_plot():
@@ -182,7 +182,7 @@ def draw_rotate_plot():
     plt.plot(angles, surf_rotate_rate)
     plt.legend(["sift", "surf"])
     plt.title("Repeatability versus rotation angle")
-    plt.show()
+    # plt.show()
 
 
 if __name__ == "__main__":
@@ -198,6 +198,27 @@ if __name__ == "__main__":
     # repeatability versus rotation angle
     # rate_list = test_robustness(data_img, angles, method)
     # np.save('./data1/rotate_rate_'+method+'.npy', np.array(rate_list))
+    # plt.figure(figsize=(10, 8))
+    # plt.subplot(2, 1, 1)
+    # draw_scale_plot()
+    # plt.subplot(2, 1, 2)
+    # draw_rotate_plot()
+    # plt.show()
+    kp_sift1 = sift_kp_extract(data_img)
+    kp_sift2 = surf_kp_extract(query_img)
 
-    draw_scale_plot()
-    draw_rotate_plot()
+    def plot_subplot(img_array, kp_list, title, cv_point=True):
+
+        plt.imshow(np.stack((img_array[:, :, 2], img_array[:, :, 1], img_array[:, :, 0]), axis=-1))
+        for k in range(len(kp_list)):
+            coordinate = kp_list[k].pt if cv_point else kp_list[k]
+            plt.scatter(coordinate[0], coordinate[1], c='b', s=5, marker='*')
+        plt.title(title)
+
+
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plot_subplot(data_img, kp_sift1, "SIFT on obj1_5.JPG")
+    plt.subplot(1, 2, 2)
+    plot_subplot(query_img, kp_sift2, "SIFT on obj1_t5.JPG")
+    plt.show()
