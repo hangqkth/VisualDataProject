@@ -37,4 +37,4 @@ if __name__ == "__main__":
     client_des_root = './features/client'
     server_des_root = './features/server'
 
-    get_obj_feature(server_img_files, database="server")
+    get_obj_feature(client_img_files, database="client")
