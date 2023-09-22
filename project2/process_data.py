@@ -33,8 +33,8 @@ if __name__ == "__main__":
     client_img_files = [os.path.join(client_root, client_list[i]) for i in range(len(client_list))]
     server_list = sorted(os.listdir(server_root))
     server_img_files = [os.path.join(server_root, server_list[i]) for i in range(len(server_list))]
-
+    print(client_img_files)
     client_des_root = './features/client'
-    server_des_root = './features/server'
-
+    # server_des_root = './features/server'
+    #
     get_obj_feature(client_img_files, database="client")
