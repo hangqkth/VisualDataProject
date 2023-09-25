@@ -6,11 +6,17 @@ from sklearn.cluster import KMeans
 
 
 def k_means(data, b):
-    kmeans = KMeans(n_clusters=b, random_state=0, max_iter=1)
-    kmeans.fit(data)
-    result = kmeans.labels_
-    center = kmeans.cluster_centers_
-    return list(result), center
+    if data.shape[0] >= b:
+        kmeans = KMeans(n_clusters=b, random_state=0, max_iter=1)
+        kmeans.fit(data)
+        result = kmeans.labels_
+        center = kmeans.cluster_centers_
+        stop_flag = False
+    else:
+        result = []
+        center = []
+        stop_flag = True
+    return list(result), center, stop_flag
 
 
 def hi_k_means(data, obj_idx, b, depth):
@@ -25,12 +31,14 @@ def hi_k_means(data, obj_idx, b, depth):
     temp_data_list = []
     temp_obj_list = []
     temp_center = []
+    node_level_list = []
     for d in range(depth):
         temp_data_list_next = []
         temp_obj_list_next = []
         temp_center_list_next = []
+        temp_tree = []
         if d == 0:  # first generate b branches
-            tree_idx, centers = k_means(data, b)  # class list
+            tree_idx, centers, flag = k_means(data, b)  # class list
             for c in range(b):  # search over three class
                 feature_idx = [i for i in range(len(tree_idx)) if tree_idx[i] == c]  # correspond object index
                 temp_data = np.concatenate([np.expand_dims(data[fea, :], axis=0) for fea in feature_idx], axis=0)
@@ -38,20 +46,30 @@ def hi_k_means(data, obj_idx, b, depth):
                 temp_data_list_next.append(temp_data)
                 temp_obj_list_next.append(temp_obj_idx)
             temp_center_list_next.append(centers)
+
         else:
             for t in range(len(temp_data_list)):
-                tree_idx, centers = k_means(temp_data_list[t], b)  # class list
-                for c in range(b):  # search over three class
-                    feature_idx = [i for i in range(len(tree_idx)) if tree_idx[i] == c]   # correspond object index
-                    temp_data = np.concatenate([np.expand_dims(temp_data_list[t][fea, :], axis=0) for fea in feature_idx], axis=0)
-                    temp_obj_idx = [temp_obj_list[t][fea] for fea in feature_idx]
-                    temp_data_list_next.append(temp_data)
-                    temp_obj_list_next.append(temp_obj_idx)
-                temp_center_list_next.append(centers)
+                tree_idx, centers, flag = k_means(temp_data_list[t], b)  # class list
+                # print(centers.shape, tree_idx) if centers.shape[0] == 1 else None
+                if flag:
+                    temp_data_list_next.append(temp_data_list[t])
+                    temp_obj_list_next.append(temp_obj_list[t])
+                    temp_center_list_next.append(np.expand_dims(temp_center[-1][-t, ], 0))
+                else:
+                    # print(tree_idx) if centers.shape[0] == 1 else None
+                    for c in range(b):  # search over three class
+                        feature_idx = [i for i in range(len(tree_idx)) if tree_idx[i] == c]   # correspond object index
+                        temp_data = np.concatenate([np.expand_dims(temp_data_list[t][fea, :], axis=0) for fea in feature_idx], axis=0)
+                        temp_obj_idx = [temp_obj_list[t][fea] for fea in feature_idx]
+                        temp_data_list_next.append(temp_data)
+                        temp_obj_list_next.append(temp_obj_idx)
+                    temp_center_list_next.append(centers)
+
         temp_data_list = temp_data_list_next
         temp_obj_list = temp_obj_list_next
         temp_center.append(np.concatenate(temp_center_list_next, axis=0))  # [[b^1, feature], [b^2, feature], [b^3, feature]...]
         # print(temp_obj_list)
+        # print(len(temp_center_list_next))
 
     return temp_obj_list, temp_center
 
@@ -80,6 +98,7 @@ def tf_idf(k_mean_obj_list, obj_num, obj_feature_num_list):
 def search_new_tree(query_feature, tree_center, idf_vector):
     classified_feature = []
     cluster_idx_list = []
+
     for depth in range(len(tree_center)):
         cluster_idx_list = []
         temp_classified_feature = [[] for i in range(tree_center[depth].shape[0])]
@@ -116,6 +135,7 @@ def search_new_tree(query_feature, tree_center, idf_vector):
         w_i = (cluster_idx_list.count(n)/len(cluster_idx_list))*idf_vector[n]
         tf_idf_vec[n] = w_i
     # print(tf_idf_vec)
+
     return tf_idf_vec
 
 
@@ -128,6 +148,15 @@ def match_object(weight_matrix, query_vector):
     return predict_obj
 
 
+def test_tree():
+    avg_recall = []
+    for i in range(50):
+        query_img_feature = np.load('./features/client/'+str(i+1)+'.npy')
+        query_vec = search_new_tree(query_img_feature, centers, idf_vec)
+        predict_obj = match_object(tf_idf_matrix, query_vec)
+        print("True object:"+str(i+1), " Predicted obj: ", predict_obj)
+        avg_recall.append(1) if i+1 == predict_obj else avg_recall.append(0)
+    print("average recall = ", np.average(np.array(avg_recall)))
 
 
 if __name__ == "__main__":
@@ -146,14 +175,17 @@ if __name__ == "__main__":
             obj_list.append(obj+1)
     server_features = np.concatenate(server_features, axis=0)
 
-    obj_list_k_mean, centers = hi_k_means(data=server_features, obj_idx=obj_list, b=4, depth=4)
-    # obj_list_k_mean, centers = hi_k_means(data=X, obj_idx=obj_list_x, b=4, depth=3)
+    obj_list_k_mean, centers = hi_k_means(data=server_features, obj_idx=obj_list, b=5, depth=7)
+    # obj_list_k_mean, centers = hi_k_means(data=X, obj_idx=obj_list_x, b=4, depth=7)
     tf_idf_matrix, idf_vec = tf_idf(obj_list_k_mean, len(server_obj_feature_num_list), server_obj_feature_num_list)
     # tf_idf_matrix, idf_vec = tf_idf(obj_list_k_mean, len(obj_feature_num_list), obj_feature_num_list)
     X_query = np.random.rand(150, 128)
-    query_img_feature = np.load('./features/client/1.npy')
-    print(query_img_feature.shape)
-    # query_vec = search_new_tree(X_query, centers, idf_vec)
-    query_vec = search_new_tree(query_img_feature, centers, idf_vec)
-    predict_obj = match_object(tf_idf_matrix, query_vec)
-    print(predict_obj)
+    # query_img_feature = np.load('./features/client/1.npy')
+    # print(query_img_feature.shape)
+    # # query_vec = search_new_tree(X_query, centers, idf_vec)
+    # query_vec = search_new_tree(query_img_feature, centers, idf_vec)
+    #
+    # predict_obj = match_object(tf_idf_matrix, query_vec)
+    # print(predict_obj)
+
+    test_tree()
