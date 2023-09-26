@@ -131,6 +131,7 @@ def search_new_tree(query_feature, tree_center, idf_vector):
             # print(cluster_idx_list)
     # calculate new tf-idf vector for query object
     tf_idf_vec = np.zeros_like(idf_vector)
+    print(cluster_idx_list)
     for n in list(set(cluster_idx_list)):
         w_i = (cluster_idx_list.count(n)/len(cluster_idx_list))*idf_vector[n]
         tf_idf_vec[n] = w_i
@@ -175,17 +176,17 @@ if __name__ == "__main__":
             obj_list.append(obj+1)
     server_features = np.concatenate(server_features, axis=0)
 
-    obj_list_k_mean, centers = hi_k_means(data=server_features, obj_idx=obj_list, b=5, depth=7)
+    obj_list_k_mean, centers = hi_k_means(data=server_features, obj_idx=obj_list, b=3, depth=3)
     # obj_list_k_mean, centers = hi_k_means(data=X, obj_idx=obj_list_x, b=4, depth=7)
-    tf_idf_matrix, idf_vec = tf_idf(obj_list_k_mean, len(server_obj_feature_num_list), server_obj_feature_num_list)
-    # tf_idf_matrix, idf_vec = tf_idf(obj_list_k_mean, len(obj_feature_num_list), obj_feature_num_list)
+    # tf_idf_matrix, idf_vec = tf_idf(obj_list_k_mean, len(server_obj_feature_num_list), server_obj_feature_num_list)
+    tf_idf_matrix, idf_vec = tf_idf(obj_list_k_mean, len(obj_feature_num_list), obj_feature_num_list)
     X_query = np.random.rand(150, 128)
     # query_img_feature = np.load('./features/client/1.npy')
     # print(query_img_feature.shape)
-    # # query_vec = search_new_tree(X_query, centers, idf_vec)
+    query_vec = search_new_tree(X_query, centers, idf_vec)
     # query_vec = search_new_tree(query_img_feature, centers, idf_vec)
     #
     # predict_obj = match_object(tf_idf_matrix, query_vec)
     # print(predict_obj)
 
-    test_tree()
+    # test_tree()
