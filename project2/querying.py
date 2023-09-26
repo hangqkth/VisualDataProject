@@ -101,7 +101,7 @@ def tf_idf(k_mean_obj_list, obj_num, obj_feature_num_list):
 
 
 def search_new_tree(query_feature, old_tree, idf_vector, depth):
-    # a leaf must be a leaf, because we only compare leaves
+    # copy leaf flag from old tree, we only compare leaves later
     new_tree = [{'leaf': old_tree[n]['leaf']} for n in range(len(old_tree))]
     root_node = {'mom': 0, 'own': 0, 'data': query_feature, 'leaf': False}
     new_tree[0] = root_node
@@ -110,9 +110,9 @@ def search_new_tree(query_feature, old_tree, idf_vector, depth):
         nodes_to_search_next = []
         for n in range(len(nodes_to_search)):
             node = nodes_to_search[n]
-            refer_node = old_tree[node['own']]
+            refer_node = old_tree[node['own']]  # get the node on the same position from old tree
             child_idxes = refer_node['child']
-            centers = [old_tree[c]['center'] for c in child_idxes]
+            centers = [old_tree[c]['center'] for c in child_idxes]  # get center from children to compare distance
             cluster_idx_list = []
             for f in range(node['data'].shape[0]):  # search over all query feature
                 f_distance = []
@@ -120,9 +120,9 @@ def search_new_tree(query_feature, old_tree, idf_vector, depth):
                     d_c = np.linalg.norm(node['data'][f, ]-c, 2)
                     f_distance.append(d_c)
                 cluster_idx_list.append(f_distance.index(min(f_distance)))
-            for c in range(len(child_idxes)):
+            for c in range(len(child_idxes)):  # classify current node feature and build new nodes
                 feature_idx = [i for i in range(len(cluster_idx_list)) if cluster_idx_list[i] == c]
-                if len(feature_idx) == 0:  # no match for this node, but it could not be a leaf
+                if len(feature_idx) == 0:  # no match for this node, but maybe it is not a leaf
                     new_node = {'mom': node['own'], 'own': child_idxes[c], 'leaf': old_tree[child_idxes[c]]['leaf']}
                 else:
                     temp_data = np.concatenate(
