@@ -6,7 +6,7 @@ import cv2
 def extract_sift(img_path):
     img = cv2.imread(img_path)
     obj_num = img_path[img_path.index('j')+1:img_path.index('_')]  # 1-50
-    sift = cv2.xfeatures2d.SIFT_create(edgeThreshold=2, contrastThreshold=0.08, nOctaveLayers=4)
+    sift = cv2.xfeatures2d.SIFT_create(edgeThreshold=4, contrastThreshold=0.08, nOctaveLayers=3, nfeatures=3000)
     _, des = sift.detectAndCompute(img, None)  # des is a list of feature vector, [[128], [128], ...]
     return np.array(des), obj_num
 
@@ -23,8 +23,8 @@ def get_obj_feature(file_list, database):
     for i in range(50):
         obj_feature = np.concatenate(obj_dict[str(i+1)], axis=0)
         print(obj_feature.shape)
-        # save_path = './features/'+database+'/'+str(i+1)+'.npy'
-        # np.save(save_path, obj_feature)
+        save_path = './features/'+database+'/'+str(i+1)+'.npy'
+        np.save(save_path, obj_feature)
 
 
 if __name__ == "__main__":
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     server_list = sorted(os.listdir(server_root))
     server_img_files = [os.path.join(server_root, server_list[i]) for i in range(len(server_list))]
     print(client_img_files)
-    client_des_root = './features/server'
-    server_des_root = './features/server'
+    client_des_root = './features/client'
+    server_des_root = './features/client'
     #
     get_obj_feature(server_img_files, database="server")

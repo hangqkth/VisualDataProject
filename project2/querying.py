@@ -1,13 +1,14 @@
 import numpy as np
-import sklearn
+import json
 import matplotlib.pyplot as plt
 import os
+import pickle
 from sklearn.cluster import KMeans
 
 
 def k_means(data, b):
     if data.shape[0] >= b:
-        kmeans = KMeans(n_clusters=b, random_state=0, max_iter=1)
+        kmeans = KMeans(n_clusters=b, random_state=0, max_iter=8)
         kmeans.fit(data)
         result = kmeans.labels_
         center = kmeans.cluster_centers_
@@ -154,24 +155,48 @@ def match_object(weight_matrix, query_vector):
         obj_error = np.linalg.norm(weight_matrix[obj] - query_vector, 1)
         obj_error_list.append(obj_error)
     predict_obj = obj_error_list.index(min(obj_error_list)) + 1
-    return predict_obj
+    if len(obj_error_list) < 5:
+        predict_top5 = sorted(range(len(obj_error_list)), key=lambda i: obj_error_list[i])[:len(obj_error_list)]
+    else:
+        predict_top5 = sorted(range(len(obj_error_list)), key=lambda i: obj_error_list[i])[:5]
+
+    return predict_obj, [obj+1 for obj in predict_top5]
 
 
-def test_tree():
-    avg_recall = []
+def test_tree(the_tree, idf_vec, tf_idf_matrix):
+    avg_recall_1 = []
+    avg_recall_5 = []
     for i in range(50):
         query_img_feature = np.load('./features/client/'+str(i+1)+'.npy')
         query_vec = search_new_tree(query_img_feature, the_tree, idf_vec, depth)
-        predict_obj = match_object(tf_idf_matrix, query_vec)
+        predict_obj, predict_top5 = match_object(tf_idf_matrix, query_vec)
         print("True object:"+str(i+1), " Predicted obj: ", predict_obj)
-        avg_recall.append(1) if i+1 == predict_obj else avg_recall.append(0)
-    print("average recall = ", np.average(np.array(avg_recall)))
+        avg_recall_1.append(1) if i+1 == predict_obj else avg_recall_1.append(0)
+        avg_recall_5.append(1) if i + 1 in predict_top5 else avg_recall_5.append(0)
+    print("top 1 recall :{:.2f} ".format(np.average(np.array(avg_recall_1))))
+    print("top 5 recall :{:.2f} ".format(np.average(np.array(avg_recall_5))))
+
+
+def save_tree(a_tree, tf_idf, idf, b, depth):
+    with open("trees/tree_"+str(b)+'_'+str(depth)+'.pkl', "wb") as file:
+        pickle.dump(a_tree, file)
+    np.save('trees/tf_idf'+str(b)+str(depth)+'.npy', tf_idf)
+    np.save('trees/idf' + str(b) + str(depth) + '.npy', idf)
+
+
+def load_tree(b, depth):
+    with open("trees/tree_"+str(b)+'_'+str(depth)+'.pkl', "rb") as p_file:
+        tree = pickle.load(p_file)
+    tf_idf = np.load('trees/tf_idf' + str(b) + str(depth) + '.npy')
+    idf = np.load('trees/idf' + str(b) + str(depth) + '.npy')
+    return tree, tf_idf, idf
 
 
 if __name__ == "__main__":
     X = np.random.rand(1500, 128)  # 50 datapoints with feature dimension of 128
     obj_list_x = sorted((np.random.randint(10, size=1500) + 1).tolist())  # object index from 1-20 for each datapoint
     obj_feature_num_list = [obj_list_x.count(i + 1) for i in range(10)]
+
     b, depth = 5, 7
 
     # the_tree, obj_list_k_mean = hi_k_means(data=X, obj_idx=obj_list_x, b=b, depth=depth)
@@ -182,20 +207,23 @@ if __name__ == "__main__":
     server_des_root = './features/server'
     server_feature_list = sorted(os.listdir(server_des_root))
     server_features_files = [server_des_root + '/' + str(i + 1) + '.npy' for i in range(len(server_feature_list))]
-    server_features = [np.load(f) for f in server_features_files]
+    server_features = [np.load(f)[:int(0.5*len(np.load(f))), :] for f in server_features_files]
+    # server_features = [np.load(f) for f in server_features_files]
     server_obj_feature_num_list = [f.shape[0] for f in server_features]  # number of features in each object
+
     obj_list = []
     for obj in range(len(server_features)):
         for feature in range(server_features[obj].shape[0]):
             obj_list.append(obj + 1)
     server_features = np.concatenate(server_features, axis=0)
+    print(server_features.shape)
+    print(len(obj_list))
 
     the_tree, obj_list_k_mean = hi_k_means(data=server_features, obj_idx=obj_list, b=b, depth=depth)
     tf_idf_matrix, idf_vec = tf_idf(obj_list_k_mean, len(server_obj_feature_num_list), server_obj_feature_num_list)
 
-    # query_img_feature = np.load('./features/client/1.npy')
-    # query_vec = search_new_tree(query_img_feature, the_tree, idf_vec, depth)
-    # predict_obj = match_object(tf_idf_matrix, query_vec)
-    # print(predict_obj)
+    # the_tree, tf_idf_matrix, idf_vec = load_tree(4, 5)
+    #
+    # save_tree(the_tree, tf_idf_matrix, idf_vec, b, depth)
+    test_tree(the_tree, idf_vec, tf_idf_matrix)
 
-    test_tree()
